@@ -87,14 +87,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </span>
             </div>
           </div>
-
-          <button
-            onClick={onOpenWalletSwitcher}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5"
-          >
-            <span>{isArabic ? 'المحافظ' : 'Wallets'}</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
         </div>
 
         {/* Address Card */}
@@ -253,7 +245,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           className="w-full py-3.5 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-300 font-bold text-xs transition-colors flex items-center justify-center gap-2"
         >
           <LogOut className="w-4 h-4" />
-          <span>{isArabic ? 'تسجيل الخروج أو تبديل الحساب' : 'Log out / Switch account'}</span>
+          <span>{isArabic ? 'تسجيل الخروج' : 'Log out'}</span>
         </button>
       </div>
     </div>

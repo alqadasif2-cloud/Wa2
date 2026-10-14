@@ -385,15 +385,35 @@ export class WalletDatabase {
       try {
         const rawTxs = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
         if (rawTxs) {
-          const txs: Transaction[] = JSON.parse(rawTxs);
+          let txs: Transaction[] = JSON.parse(rawTxs);
+          let modified = false;
+
+          // Restore and ensure refund transactions for Eslam Alqadasi exist
+          const refundSeed = getInitialSeedData().transactions.filter(t => t.transactionType === 'refund');
+          for (const rf of refundSeed) {
+            const idx = txs.findIndex(t => t.transactionId === rf.transactionId);
+            if (idx === -1) {
+              txs.push(rf);
+              modified = true;
+            } else if (txs[idx].senderUserId !== 'usr_eslam_alqadasi') {
+              txs[idx].senderUserId = 'usr_eslam_alqadasi';
+              modified = true;
+            }
+          }
+
           const has4 = txs.some(t => t.transactionId === 'TX_HIST_004');
           const has5 = txs.some(t => t.transactionId === 'TX_HIST_005');
           if (!has4 || !has5) {
             const seed = getInitialSeedData();
             const toAdd = seed.transactions.filter(t => (t.transactionId === 'TX_HIST_004' || t.transactionId === 'TX_HIST_005') && !txs.some(existing => existing.transactionId === t.transactionId));
             if (toAdd.length > 0) {
-              localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify([...txs, ...toAdd]));
+              txs = [...txs, ...toAdd];
+              modified = true;
             }
+          }
+
+          if (modified) {
+            localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(txs));
           }
         }
       } catch {
@@ -476,7 +496,11 @@ export class WalletDatabase {
   public static getUserTransactions(userId: string): Transaction[] {
     this.checkAndReleaseExpiredLocks();
     const all = this.getTransactions();
-    return all.filter(t => t.senderUserId === userId || t.receiverUserId === userId);
+    return all.filter(t => 
+      t.senderUserId === userId || 
+      t.receiverUserId === userId ||
+      (t.transactionType === 'refund' && (userId === 'usr_eslam_alqadasi' || t.senderUserId === userId || t.receiverUserId === userId))
+    );
   }
 
   public static saveTransactions(txs: Transaction[]): void {

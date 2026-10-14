@@ -164,7 +164,9 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                     </div>
 
                     <span className="text-[11px] text-slate-400 truncate">
-                      {tx.receiverUserId === currentUserId
+                      {tx.transactionType === 'refund' || tx.status === 'refunded'
+                        ? (isArabic ? 'عملية استرجاع' : 'Refund')
+                        : tx.receiverUserId === currentUserId
                         ? `${isArabic ? 'من:' : 'From:'} ${tx.senderUsername}`
                         : `${isArabic ? 'إلى:' : 'To:'} ${tx.destinationAddress ? shortenAddress(tx.destinationAddress, 6) : tx.receiverUsername}`}
                     </span>
@@ -238,16 +240,18 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                   </span>
                 </div>
 
-                {/* Sender */}
-                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900/60">
-                  <span className="text-slate-400">{isArabic ? 'المرسل:' : 'Sender:'}</span>
-                  <span className="text-slate-200 font-medium">
-                    {selectedTx.senderUsername}
-                  </span>
-                </div>
+                {/* Sender - Hidden for refunded transactions */}
+                {selectedTx.transactionType !== 'refund' && selectedTx.status !== 'refunded' && selectedTx.senderUsername && (
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900/60">
+                    <span className="text-slate-400">{isArabic ? 'المرسل:' : 'Sender:'}</span>
+                    <span className="text-slate-200 font-medium">
+                      {selectedTx.senderUsername}
+                    </span>
+                  </div>
+                )}
 
                 {/* Sender Address */}
-                {selectedTx.senderAddress && (
+                {selectedTx.transactionType !== 'refund' && selectedTx.status !== 'refunded' && selectedTx.senderAddress && (
                   <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900/60">
                     <span className="text-slate-400">{isArabic ? 'عنوان المرسل:' : 'Sender Address:'}</span>
                     <span className="font-mono text-slate-300 select-all text-[11px]" dir="ltr">

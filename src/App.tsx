@@ -113,7 +113,10 @@ export default function App() {
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
 
   const handleLogout = () => {
-    setShowWalletSwitcher(true);
+    WalletDatabase.setCurrentUser(null);
+    setCurrentUser(null);
+    setShowWalletSwitcher(false);
+    setShowAuthModal(true);
   };
 
   const handleSelectUser = (user: User) => {
@@ -144,7 +147,7 @@ export default function App() {
         onOpenNotifications={() => setShowNotificationsModal(true)}
         onOpenAdmin={() => setShowAdminDashboard(true)}
         onLogout={handleLogout}
-        onOpenWalletSwitcher={() => setShowWalletSwitcher(true)}
+        onOpenWalletSwitcher={() => setShowAuthModal(true)}
         onOpenQrScanner={() => setShowQrScanner(true)}
         onOpenSettings={() => setActiveTab('settings')}
         onOpenLogin={() => setShowAuthModal(true)}
