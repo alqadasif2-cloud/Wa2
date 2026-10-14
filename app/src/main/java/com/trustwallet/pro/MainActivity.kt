@@ -3,11 +3,15 @@ package com.trustwallet.pro
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.webkit.WebViewAssetLoader
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
@@ -15,23 +19,55 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Setup AssetLoader to securely serve local bundled assets from inside APK
+        // This ensures the app works 100% offline, standalone, with full localStorage & CORS support
+        val assetLoader = WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .build()
+
         webView = WebView(this).apply {
             settings.apply {
                 javaScriptEnabled = true
-                domStorageEnabled = true
+                domStorageEnabled = true // Required for localStorage / WalletDatabase
                 databaseEnabled = true
                 allowFileAccess = true
+                allowContentAccess = true
                 cacheMode = WebSettings.LOAD_DEFAULT
                 useWideViewPort = true
                 loadWithOverviewMode = true
-                mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             }
-            webViewClient = WebViewClient()
+
+            webViewClient = object : WebViewClient() {
+                override fun shouldInterceptRequest(
+                    view: WebView,
+                    request: WebResourceRequest
+                ): WebResourceResponse? {
+                    return assetLoader.shouldInterceptRequest(request.url)
+                }
+
+                override fun onReceivedError(
+                    view: WebView,
+                    request: WebResourceRequest,
+                    error: WebResourceError
+                ) {
+                    super.onReceivedError(view, request, error)
+                    // If https://appassets.androidplatform.net/ fails, fallback to direct android_asset
+                    if (request.isForMainFrame) {
+                        view.post {
+                            view.loadUrl("file:///android_asset/dist/index.html")
+                        }
+                    }
+                }
+            }
+
             webChromeClient = WebChromeClient()
         }
+
         setContentView(webView)
 
-        // Back button navigation
+        // Android back button navigation
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (webView.canGoBack()) {
@@ -43,8 +79,8 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        // Current application URL for TRUST WALLET PRO
-        val appUrl = "https://ais-pre-x7aebpya3m42hnukpypgx6-877998647748.europe-west2.run.app"
-        webView.loadUrl(appUrl)
+        // Load bundled standalone offline app from inside APK
+        val localAssetUrl = "https://appassets.androidplatform.net/assets/dist/index.html"
+        webView.loadUrl(localAssetUrl)
     }
 }
