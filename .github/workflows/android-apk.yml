@@ -19,7 +19,7 @@ jobs:
   build:
     name: Assemble Debug APK
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
 
     steps:
       - name: Checkout Repository
@@ -32,38 +32,36 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Set up Gradle 8.4
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.4'
 
-      - name: Make Gradlew Executable
+      - name: Grant Execute Permission to Gradlew
         run: chmod +x gradlew
+
+      - name: Accept Android SDK Licenses
+        run: |
+          echo "Configuring pre-installed Android SDK at $ANDROID_HOME..."
+          mkdir -p "$ANDROID_HOME/licenses" || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
 
       - name: Build Debug APK
         run: |
-          echo "Starting Android APK compilation with Gradle..."
-          if [ -f "gradle/wrapper/gradle-wrapper.jar" ]; then
-            ./gradlew assembleDebug --stacktrace --no-daemon
-          else
-            gradle assembleDebug --stacktrace --no-daemon
-          fi
+          echo "Starting Android APK build..."
+          ./gradlew assembleDebug --stacktrace --no-daemon
 
       - name: Verify APK Output
         run: |
-          echo "Searching for generated APK files..."
-          APK_PATH=$(find app/build/outputs/apk -type f -name "*.apk" | head -n 1)
-          if [ -n "$APK_PATH" ]; then
+          echo "Searching for generated APK file..."
+          APK_FILE=$(find app/build/outputs/apk -type f -name "*.apk" | head -n 1)
+          if [ -n "$APK_FILE" ]; then
             echo "=================================================="
-            echo "APK Generated Successfully!"
-            echo "File path: $APK_PATH"
-            ls -lh "$APK_PATH"
+            echo "SUCCESS: APK Generated at $APK_FILE"
+            ls -lh "$APK_FILE"
             echo "=================================================="
           else
-            echo "ERROR: No APK file was found under app/build/outputs/apk"
+            echo "ERROR: No APK was generated in app/build/outputs/apk"
             exit 1
           fi
 
