@@ -29,12 +29,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install Web Dependencies & Compile Assets
         run: |
           echo "Compiling React SPA into standalone offline assets..."
-          npm ci || npm install
+          npm install --legacy-peer-deps
           npm run build
           mkdir -p app/src/main/assets
           rm -rf app/src/main/assets/dist
